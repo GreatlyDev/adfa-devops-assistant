@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 
+from app.db.database import Base, engine
+from app.models.deployment import DeploymentLog
 from app.routes.logs import router as logs_router
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="ADFA Backend API",
