@@ -43,3 +43,8 @@ def ingest_logs(payload: LogRequest, db: Session = Depends(get_db)):
         "deployment_id": deployment_log.id,
         "analysis": analysis_result,
     }
+
+@router.get("/")
+def get_logs(db: Session = Depends(get_db)):
+    logs = db.query(DeploymentLog).all()
+    return logs
