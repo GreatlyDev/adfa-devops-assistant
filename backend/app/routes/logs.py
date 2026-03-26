@@ -1,18 +1,18 @@
 import json
 
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import SessionLocal
 from app.models.deployment import DeploymentLog
+from app.schemas.deployment import (
+    DeploymentLogResponse,
+    LogIngestResponse,
+    LogRequest,
+)
 from app.services.analyzer import analyze_log
 
 router = APIRouter(prefix="/api/logs", tags=["logs"])
-
-
-class LogRequest(BaseModel):
-    log_text: str
 
 
 def get_db():
@@ -23,7 +23,18 @@ def get_db():
         db.close()
 
 
-@router.post("/")
+def serialize_deployment_log(deployment_log: DeploymentLog) -> DeploymentLogResponse:
+    return DeploymentLogResponse(
+        id=deployment_log.id,
+        log_text=deployment_log.log_text,
+        status=deployment_log.status,
+        issues=json.loads(deployment_log.issues),
+        recommendations=json.loads(deployment_log.recommendations),
+        created_at=deployment_log.created_at,
+    )
+
+
+@router.post("/", response_model=LogIngestResponse)
 def ingest_logs(payload: LogRequest, db: Session = Depends(get_db)):
     analysis_result = analyze_log(payload.log_text)
 
@@ -38,13 +49,28 @@ def ingest_logs(payload: LogRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(deployment_log)
 
-    return {
-        "message": "Log received, analyzed, and stored successfully",
-        "deployment_id": deployment_log.id,
-        "analysis": analysis_result,
-    }
+    return LogIngestResponse(
+        message="Log received, analyzed, and stored successfully",
+        deployment_id=deployment_log.id,
+        analysis=analysis_result,
+    )
 
-@router.get("/")
+
+@router.get("/", response_model=list[DeploymentLogResponse])
 def get_logs(db: Session = Depends(get_db)):
     logs = db.query(DeploymentLog).all()
-    return logs
+    return [serialize_deployment_log(log) for log in logs]
+
+
+@router.get("/{deployment_id}", response_model=DeploymentLogResponse)
+def get_log_by_id(deployment_id: int, db: Session = Depends(get_db)):
+    deployment_log = (
+        db.query(DeploymentLog)
+        .filter(DeploymentLog.id == deployment_id)
+        .first()
+    )
+
+    if deployment_log is None:
+        raise HTTPException(status_code=404, detail="Deployment log not found")
+
+    return serialize_deployment_log(deployment_log)
