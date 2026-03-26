@@ -26,3 +26,10 @@ class LogIngestResponse(BaseModel):
     message: str
     deployment_id: int
     analysis: LogAnalysis
+
+
+class DashboardSummaryResponse(BaseModel):
+    total_logs: int
+    successful_logs: int
+    failed_logs: int
+    recent_logs: list[DeploymentLogResponse]

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.models.deployment import DeploymentLog
 from app.schemas.deployment import (
+    DashboardSummaryResponse,
     DeploymentLogResponse,
     LogIngestResponse,
     LogRequest,
@@ -60,6 +61,22 @@ def ingest_logs(payload: LogRequest, db: Session = Depends(get_db)):
 def get_logs(db: Session = Depends(get_db)):
     logs = db.query(DeploymentLog).all()
     return [serialize_deployment_log(log) for log in logs]
+
+
+@router.get("/summary", response_model=DashboardSummaryResponse)
+def get_logs_summary(db: Session = Depends(get_db)):
+    logs = db.query(DeploymentLog).order_by(DeploymentLog.created_at.desc()).all()
+
+    successful_logs = sum(1 for log in logs if log.status == "success")
+    failed_logs = sum(1 for log in logs if log.status == "failed")
+    recent_logs = [serialize_deployment_log(log) for log in logs[:5]]
+
+    return DashboardSummaryResponse(
+        total_logs=len(logs),
+        successful_logs=successful_logs,
+        failed_logs=failed_logs,
+        recent_logs=recent_logs,
+    )
 
 
 @router.get("/{deployment_id}", response_model=DeploymentLogResponse)
