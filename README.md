@@ -223,6 +223,4 @@ Through this project, I practiced:
 - deploy the project publicly
 - add screenshots and architecture diagrams
 
-## Status
 
-ADFA is complete as a strong version 1 portfolio project and is being iterated on as a learning-focused DevOps application.
