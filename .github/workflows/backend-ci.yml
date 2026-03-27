@@ -33,3 +33,6 @@ jobs:
 
       - name: Verify FastAPI app imports
         run: python -c "from app.main import app; print(app.title)"
+
+      - name: Run backend tests
+        run: pytest
