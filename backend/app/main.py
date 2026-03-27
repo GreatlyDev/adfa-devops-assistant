@@ -11,7 +11,22 @@ from app.routes.logs import router as logs_router
 
 Base.metadata.create_all(bind=engine)
 
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+
+def get_frontend_dir() -> Path:
+    current_file = Path(__file__).resolve()
+    possible_frontend_dirs = [
+        current_file.parents[2] / "frontend",
+        current_file.parents[1] / "frontend",
+    ]
+
+    for directory in possible_frontend_dirs:
+        if directory.exists():
+            return directory
+
+    return possible_frontend_dirs[0]
+
+
+FRONTEND_DIR = get_frontend_dir()
 
 app = FastAPI(
     title="ADFA Backend API",
