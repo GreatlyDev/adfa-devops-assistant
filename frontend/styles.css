@@ -1,0 +1,256 @@
+:root {
+    --bg: #f4efe6;
+    --surface: rgba(255, 255, 255, 0.78);
+    --surface-strong: #fffdf8;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --accent: #0f766e;
+    --accent-strong: #115e59;
+    --danger: #b42318;
+    --success: #166534;
+    --border: rgba(31, 41, 55, 0.12);
+    --shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(217, 119, 6, 0.14), transparent 28%),
+        linear-gradient(180deg, #f8f4eb 0%, #f0e8dd 100%);
+}
+
+.page-shell {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 48px 0 56px;
+}
+
+.hero,
+.stats-grid,
+.content-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.hero {
+    grid-template-columns: 1.8fr 1fr;
+    align-items: stretch;
+    margin-bottom: 24px;
+}
+
+.eyebrow,
+.panel-kicker,
+.stat-label,
+.hero-label {
+    margin: 0 0 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+h1,
+h2,
+p {
+    margin-top: 0;
+}
+
+h1 {
+    margin-bottom: 12px;
+    font-size: clamp(2.2rem, 5vw, 4.1rem);
+    line-height: 1;
+}
+
+h2 {
+    margin-bottom: 0;
+    font-size: 1.35rem;
+}
+
+.hero-copy,
+.hero-note,
+.empty-state,
+.meta-text,
+label {
+    color: var(--muted);
+}
+
+.hero-card,
+.stat-card,
+.panel,
+.log-item,
+.result-box {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    backdrop-filter: blur(14px);
+    box-shadow: var(--shadow);
+}
+
+.hero-card,
+.panel {
+    border-radius: 24px;
+}
+
+.hero-card {
+    padding: 24px;
+    align-self: end;
+}
+
+.hero-status {
+    margin-bottom: 10px;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    padding: 20px;
+    border-radius: 22px;
+}
+
+.stat-value {
+    margin: 0;
+    font-size: 2.2rem;
+    font-weight: 800;
+}
+
+.success {
+    color: var(--success);
+}
+
+.failed {
+    color: var(--danger);
+}
+
+.content-grid {
+    grid-template-columns: 1.2fr 1fr;
+}
+
+.panel {
+    padding: 24px;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.log-form {
+    display: grid;
+    gap: 12px;
+}
+
+textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    font: inherit;
+    resize: vertical;
+    background: var(--surface-strong);
+    color: var(--text);
+}
+
+button {
+    border: none;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    color: white;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+.secondary-button {
+    color: var(--accent-strong);
+    background: rgba(15, 118, 110, 0.08);
+}
+
+.result-box {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 18px;
+}
+
+.hidden {
+    display: none;
+}
+
+.log-list {
+    display: grid;
+    gap: 14px;
+}
+
+.log-item {
+    padding: 16px;
+    border-radius: 18px;
+}
+
+.log-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.status-success {
+    color: var(--success);
+    background: rgba(22, 101, 52, 0.12);
+}
+
+.status-failed {
+    color: var(--danger);
+    background: rgba(180, 35, 24, 0.12);
+}
+
+.issue-list {
+    margin: 10px 0 0;
+    padding-left: 18px;
+}
+
+.empty-state {
+    margin: 0;
+    padding: 18px;
+    border: 1px dashed var(--border);
+    border-radius: 18px;
+    text-align: center;
+}
+
+@media (max-width: 860px) {
+    .hero,
+    .stats-grid,
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-shell {
+        padding-top: 28px;
+    }
+}

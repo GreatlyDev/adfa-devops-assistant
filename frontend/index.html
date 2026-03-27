@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADFA Dashboard</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+    <main class="page-shell">
+        <section class="hero">
+            <div>
+                <p class="eyebrow">ADFA Dashboard</p>
+                <h1>Track deployment logs and surface issues fast.</h1>
+                <p class="hero-copy">
+                    A lightweight operations dashboard for viewing recent deployment activity,
+                    spotting failures, and testing the ADFA analyzer from one screen.
+                </p>
+            </div>
+            <div class="hero-card">
+                <p class="hero-label">API Status</p>
+                <p id="health-status" class="hero-status">Checking...</p>
+                <p class="hero-note">Connected to your FastAPI backend</p>
+            </div>
+        </section>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <p class="stat-label">Total Logs</p>
+                <p id="total-logs" class="stat-value">0</p>
+            </article>
+            <article class="stat-card">
+                <p class="stat-label">Successful</p>
+                <p id="successful-logs" class="stat-value success">0</p>
+            </article>
+            <article class="stat-card">
+                <p class="stat-label">Failed</p>
+                <p id="failed-logs" class="stat-value failed">0</p>
+            </article>
+        </section>
+
+        <section class="content-grid">
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Analyzer</p>
+                        <h2>Submit a deployment log</h2>
+                    </div>
+                </div>
+
+                <form id="log-form" class="log-form">
+                    <label for="log-text">Deployment log text</label>
+                    <textarea
+                        id="log-text"
+                        name="log_text"
+                        rows="10"
+                        placeholder="Paste a deployment log here..."
+                        required
+                    ></textarea>
+                    <button type="submit">Analyze and Save Log</button>
+                </form>
+
+                <div id="submission-result" class="result-box hidden"></div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Recent Activity</p>
+                        <h2>Latest deployment logs</h2>
+                    </div>
+                    <button id="refresh-button" class="secondary-button" type="button">Refresh</button>
+                </div>
+
+                <div id="recent-logs" class="log-list"></div>
+            </article>
+        </section>
+    </main>
+
+    <script src="/assets/app.js"></script>
+</body>
+</html>
