@@ -35,8 +35,7 @@ This project helped me turn several core DevOps concepts into a working end-to-e
   - viewing totals
   - viewing recent deployment history
 - Docker support for running the app in a container
-- GitHub Actions CI for backend checks
-- Backend test coverage for core API behavior
+- GitHub Actions CI for backend 
 
 ## Tech Stack
 
