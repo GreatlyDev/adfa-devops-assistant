@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -130,11 +131,21 @@ def test_summary_endpoint_returns_log_counts():
         "environment": "",
         "service_name": "",
         "search": "",
+        "trend_days": "7",
     }
     assert response_data["status_breakdown"] == [
         {"label": "success", "count": 1},
         {"label": "failed", "count": 1},
     ]
+    assert len(response_data["daily_activity"]) == 7
+    today = datetime.now().date().isoformat()
+    today_point = next(point for point in response_data["daily_activity"] if point["date"] == today)
+    assert today_point == {
+        "date": today,
+        "total_logs": 2,
+        "successful_logs": 1,
+        "failed_logs": 1,
+    }
     assert response_data["top_issue_categories"][0]["category"] == "permissions"
     assert response_data["most_impacted_services"][0]["service_name"] == "payments-api"
     assert len(response_data["recent_logs"]) == 2

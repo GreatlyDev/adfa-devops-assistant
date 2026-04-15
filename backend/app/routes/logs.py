@@ -2,6 +2,7 @@ import json
 import csv
 from io import StringIO
 from collections import Counter
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -267,6 +268,7 @@ def get_logs_summary(
     environment: str | None = Query(default=None),
     service_name: str | None = Query(default=None),
     search: str | None = Query(default=None),
+    trend_days: int = Query(default=7, ge=3, le=30),
     db: Session = Depends(get_db),
 ):
     logs = get_filtered_logs(
@@ -287,6 +289,17 @@ def get_logs_summary(
     recent_logs = [serialize_deployment_log(log) for log in logs[:5]]
     category_counts = Counter()
     impacted_services = Counter()
+    daily_activity_map = {}
+    today = datetime.now().date()
+
+    for offset in range(trend_days - 1, -1, -1):
+        day = today - timedelta(days=offset)
+        daily_activity_map[day.isoformat()] = {
+            "date": day.isoformat(),
+            "total_logs": 0,
+            "successful_logs": 0,
+            "failed_logs": 0,
+        }
 
     for log in logs:
         for category in json.loads(log.issue_categories or "[]"):
@@ -295,6 +308,15 @@ def get_logs_summary(
 
         if log.status == "failed" and log.service_name:
             impacted_services[log.service_name] += 1
+
+        if log.created_at:
+            log_day = log.created_at.date().isoformat()
+            if log_day in daily_activity_map:
+                daily_activity_map[log_day]["total_logs"] += 1
+                if log.status == "success":
+                    daily_activity_map[log_day]["successful_logs"] += 1
+                if log.status == "failed":
+                    daily_activity_map[log_day]["failed_logs"] += 1
 
     return DashboardSummaryResponse(
         total_logs=len(logs),
@@ -307,11 +329,13 @@ def get_logs_summary(
             "environment": environment or "",
             "service_name": service_name or "",
             "search": search or "",
+            "trend_days": str(trend_days),
         },
         status_breakdown=[
             {"label": "success", "count": successful_logs},
             {"label": "failed", "count": failed_logs},
         ],
+        daily_activity=list(daily_activity_map.values()),
         top_issue_categories=[
             {"category": category, "count": count}
             for category, count in category_counts.most_common(4)

@@ -55,6 +55,13 @@ class StatusBreakdownStat(BaseModel):
     count: int
 
 
+class DailyActivityPoint(BaseModel):
+    date: str
+    total_logs: int
+    successful_logs: int
+    failed_logs: int
+
+
 class LogIngestResponse(BaseModel):
     message: str
     deployment_id: int
@@ -75,6 +82,7 @@ class DashboardSummaryResponse(BaseModel):
     average_confidence: float
     active_filters: dict[str, str]
     status_breakdown: list[StatusBreakdownStat]
+    daily_activity: list[DailyActivityPoint]
     top_issue_categories: list[IssueCategoryStat]
     most_impacted_services: list[ServiceHealthStat]
     recent_logs: list[DeploymentLogResponse]
