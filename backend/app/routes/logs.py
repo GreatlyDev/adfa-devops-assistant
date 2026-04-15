@@ -1,7 +1,10 @@
 import json
+import csv
+from io import StringIO
 from collections import Counter
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.db.database import SessionLocal
@@ -73,6 +76,22 @@ def apply_log_filters(query, status: str | None, environment: str | None, servic
         )
 
     return query
+
+
+def get_filtered_logs(
+    db: Session,
+    status: str | None,
+    environment: str | None,
+    service_name: str | None,
+    search: str | None,
+):
+    return apply_log_filters(
+        db.query(DeploymentLog).order_by(DeploymentLog.created_at.desc()),
+        status=status,
+        environment=environment,
+        service_name=service_name,
+        search=search,
+    ).all()
 
 
 @router.post("/", response_model=LogIngestResponse)
@@ -168,14 +187,78 @@ def get_logs(
     search: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    logs = apply_log_filters(
-        db.query(DeploymentLog).order_by(DeploymentLog.created_at.desc()),
+    logs = get_filtered_logs(
+        db=db,
         status=status,
         environment=environment,
         service_name=service_name,
         search=search,
-    ).all()
+    )
     return [serialize_deployment_log(log) for log in logs]
+
+
+@router.get("/export")
+def export_logs_csv(
+    status: str | None = Query(default=None),
+    environment: str | None = Query(default=None),
+    service_name: str | None = Query(default=None),
+    search: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    logs = get_filtered_logs(
+        db=db,
+        status=status,
+        environment=environment,
+        service_name=service_name,
+        search=search,
+    )
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "id",
+            "service_name",
+            "environment",
+            "source",
+            "branch",
+            "commit_sha",
+            "triggered_by",
+            "status",
+            "confidence_score",
+            "issue_categories",
+            "matched_signals",
+            "created_at",
+            "log_text",
+        ]
+    )
+
+    for log in logs:
+        writer.writerow(
+            [
+                log.id,
+                log.service_name or "",
+                log.environment or "",
+                log.source or "",
+                log.branch or "",
+                log.commit_sha or "",
+                log.triggered_by or "",
+                log.status,
+                log.confidence_score or 0.0,
+                ", ".join(json.loads(log.issue_categories or "[]")),
+                ", ".join(json.loads(log.matched_signals or "[]")),
+                log.created_at.isoformat() if log.created_at else "",
+                log.log_text,
+            ]
+        )
+
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="adfa-deployments.csv"'},
+    )
 
 
 @router.get("/summary", response_model=DashboardSummaryResponse)
@@ -186,13 +269,13 @@ def get_logs_summary(
     search: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    logs = apply_log_filters(
-        db.query(DeploymentLog).order_by(DeploymentLog.created_at.desc()),
+    logs = get_filtered_logs(
+        db=db,
         status=status,
         environment=environment,
         service_name=service_name,
         search=search,
-    ).all()
+    )
 
     successful_logs = sum(1 for log in logs if log.status == "success")
     failed_logs = sum(1 for log in logs if log.status == "failed")
@@ -225,6 +308,10 @@ def get_logs_summary(
             "service_name": service_name or "",
             "search": search or "",
         },
+        status_breakdown=[
+            {"label": "success", "count": successful_logs},
+            {"label": "failed", "count": failed_logs},
+        ],
         top_issue_categories=[
             {"category": category, "count": count}
             for category, count in category_counts.most_common(4)

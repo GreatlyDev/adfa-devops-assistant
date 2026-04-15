@@ -50,6 +50,11 @@ class ServiceHealthStat(BaseModel):
     failed_count: int
 
 
+class StatusBreakdownStat(BaseModel):
+    label: str
+    count: int
+
+
 class LogIngestResponse(BaseModel):
     message: str
     deployment_id: int
@@ -69,6 +74,7 @@ class DashboardSummaryResponse(BaseModel):
     failure_rate: float
     average_confidence: float
     active_filters: dict[str, str]
+    status_breakdown: list[StatusBreakdownStat]
     top_issue_categories: list[IssueCategoryStat]
     most_impacted_services: list[ServiceHealthStat]
     recent_logs: list[DeploymentLogResponse]

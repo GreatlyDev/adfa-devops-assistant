@@ -131,6 +131,10 @@ def test_summary_endpoint_returns_log_counts():
         "service_name": "",
         "search": "",
     }
+    assert response_data["status_breakdown"] == [
+        {"label": "success", "count": 1},
+        {"label": "failed", "count": 1},
+    ]
     assert response_data["top_issue_categories"][0]["category"] == "permissions"
     assert response_data["most_impacted_services"][0]["service_name"] == "payments-api"
     assert len(response_data["recent_logs"]) == 2
@@ -220,3 +224,35 @@ def test_seed_demo_logs_does_not_duplicate_without_force():
 
     logs_response = client.get("/api/logs/")
     assert len(logs_response.json()) == 6
+
+
+def test_export_logs_csv_respects_filters():
+    client.post(
+        "/api/logs/",
+        json={
+            "service_name": "payments-api",
+            "environment": "prod",
+            "branch": "main",
+            "commit_sha": "abc1234",
+            "log_text": "Deployment failed due to timeout error",
+        },
+    )
+    client.post(
+        "/api/logs/",
+        json={
+            "service_name": "frontend-web",
+            "environment": "staging",
+            "branch": "release/ui",
+            "commit_sha": "def5678",
+            "log_text": "Deployment completed successfully",
+        },
+    )
+
+    response = client.get("/api/logs/export?environment=prod")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert "attachment; filename=\"adfa-deployments.csv\"" == response.headers["content-disposition"]
+    assert "payments-api" in response.text
+    assert "frontend-web" not in response.text
+    assert "issue_categories" in response.text

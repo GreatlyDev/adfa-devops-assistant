@@ -11,6 +11,9 @@ const refreshButton = document.getElementById("refresh-button");
 const seedDemoButton = document.getElementById("seed-demo-button");
 const activeFiltersEl = document.getElementById("active-filters");
 const clearFiltersButton = document.getElementById("clear-filters");
+const exportButton = document.getElementById("export-button");
+const statusChartEl = document.getElementById("status-chart");
+const categoryChartEl = document.getElementById("category-chart");
 const topCategoriesEl = document.getElementById("top-categories");
 const impactedServicesEl = document.getElementById("impacted-services");
 const averageConfidenceEl = document.getElementById("average-confidence");
@@ -141,6 +144,32 @@ function renderInsightList(container, items, emptyMessage, valueFormatter) {
         .join("");
 }
 
+function renderBarChart(container, items, emptyMessage, colorClassPrefix = "chart-bar") {
+    if (!items.length || items.every((item) => item.value === 0)) {
+        container.innerHTML = `<p class="empty-state">${emptyMessage}</p>`;
+        return;
+    }
+
+    const maxValue = Math.max(...items.map((item) => item.value), 1);
+
+    container.innerHTML = items
+        .map((item) => {
+            const percentage = Math.max((item.value / maxValue) * 100, item.value > 0 ? 10 : 0);
+            return `
+                <div class="chart-row">
+                    <div class="chart-label-row">
+                        <span class="chart-label">${item.label}</span>
+                        <span class="chart-value">${item.value}</span>
+                    </div>
+                    <div class="chart-track">
+                        <div class="${colorClassPrefix} ${colorClassPrefix}-${item.tone || item.label}" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+            `;
+        })
+        .join("");
+}
+
 function renderDeploymentDetails(log) {
     detailsTitleEl.textContent = `Deployment #${log.id}`;
     deploymentDetailsEl.className = "details-content";
@@ -212,6 +241,26 @@ async function loadDashboard() {
     averageConfidenceEl.textContent = `Average analyzer confidence: ${Math.round(data.average_confidence * 100)}%`;
 
     updateActiveFiltersText(data.active_filters);
+    renderBarChart(
+        statusChartEl,
+        data.status_breakdown.map((item) => ({
+            label: item.label,
+            value: item.count,
+            tone: item.label,
+        })),
+        "No deployment status data yet.",
+        "chart-bar"
+    );
+    renderBarChart(
+        categoryChartEl,
+        data.top_issue_categories.map((item) => ({
+            label: item.category,
+            value: item.count,
+            tone: "category",
+        })),
+        "No issue-category trends yet.",
+        "chart-bar"
+    );
     renderInsightList(
         topCategoriesEl,
         data.top_issue_categories.map((item) => ({ label: item.category, value: item.count })),
@@ -286,6 +335,17 @@ async function clearFilters() {
     await loadDashboard();
 }
 
+function exportFilteredLogs() {
+    const filters = getActiveFilters();
+    const exportUrl = `/api/logs/export${buildQueryString(filters)}`;
+    const downloadLink = document.createElement("a");
+    downloadLink.href = exportUrl;
+    downloadLink.download = "adfa-deployments.csv";
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+}
+
 async function loadDemoData(force = false) {
     seedDemoButton.disabled = true;
     seedDemoButton.textContent = force ? "Reloading Demo Data..." : "Loading Demo Data...";
@@ -335,6 +395,7 @@ logForm.addEventListener("submit", handleSubmit);
 filtersForm.addEventListener("submit", handleFilterSubmit);
 refreshButton.addEventListener("click", loadDashboard);
 clearFiltersButton.addEventListener("click", clearFilters);
+exportButton.addEventListener("click", exportFilteredLogs);
 seedDemoButton.addEventListener("click", () => loadDemoData());
 
 fetchHealth();

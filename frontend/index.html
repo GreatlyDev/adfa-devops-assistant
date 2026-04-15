@@ -47,10 +47,21 @@
             <article class="panel">
                 <div class="panel-header">
                     <div>
+                        <p class="panel-kicker">Status Mix</p>
+                        <h2>Deployment outcome chart</h2>
+                    </div>
+                </div>
+                <div id="status-chart" class="chart-shell"></div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
                         <p class="panel-kicker">Trends</p>
                         <h2>Top issue categories</h2>
                     </div>
                 </div>
+                <div id="category-chart" class="chart-shell"></div>
                 <div id="top-categories" class="insight-list"></div>
             </article>
 
@@ -167,6 +178,7 @@
                     </div>
                     <div class="filter-actions">
                         <button type="submit" class="secondary-button">Apply Filters</button>
+                        <button id="export-button" type="button" class="secondary-button">Export CSV</button>
                         <button id="clear-filters" type="button" class="ghost-button">Clear</button>
                     </div>
                 </form>
