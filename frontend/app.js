@@ -8,6 +8,7 @@ const logForm = document.getElementById("log-form");
 const filtersForm = document.getElementById("filters-form");
 const submissionResultEl = document.getElementById("submission-result");
 const refreshButton = document.getElementById("refresh-button");
+const seedDemoButton = document.getElementById("seed-demo-button");
 const activeFiltersEl = document.getElementById("active-filters");
 const clearFiltersButton = document.getElementById("clear-filters");
 const topCategoriesEl = document.getElementById("top-categories");
@@ -285,6 +286,42 @@ async function clearFilters() {
     await loadDashboard();
 }
 
+async function loadDemoData(force = false) {
+    seedDemoButton.disabled = true;
+    seedDemoButton.textContent = force ? "Reloading Demo Data..." : "Loading Demo Data...";
+
+    try {
+        const response = await fetch(`/api/logs/seed-demo${force ? "?force=true" : ""}`, {
+            method: "POST",
+        });
+
+        if (!response.ok) {
+            throw new Error("Unable to load demo data.");
+        }
+
+        const data = await response.json();
+
+        if (data.inserted_logs === 0 && data.existing_logs > 0 && !force) {
+            const shouldReplace = window.confirm(
+                "Demo data already exists. Do you want to replace it with a fresh batch?"
+            );
+
+            if (shouldReplace) {
+                await loadDemoData(true);
+                return;
+            }
+        } else {
+            showSubmissionResult(`${data.message} Inserted ${data.inserted_logs} demo logs.`);
+            await loadDashboard();
+        }
+    } catch (error) {
+        showSubmissionResult("Could not load demo data right now. Please try again.", true);
+    } finally {
+        seedDemoButton.disabled = false;
+        seedDemoButton.textContent = "Load Demo Data";
+    }
+}
+
 recentLogsEl.addEventListener("click", async (event) => {
     const logCard = event.target.closest("[data-deployment-id]");
     if (!logCard) {
@@ -298,6 +335,7 @@ logForm.addEventListener("submit", handleSubmit);
 filtersForm.addEventListener("submit", handleFilterSubmit);
 refreshButton.addEventListener("click", loadDashboard);
 clearFiltersButton.addEventListener("click", clearFilters);
+seedDemoButton.addEventListener("click", () => loadDemoData());
 
 fetchHealth();
 loadDashboard();

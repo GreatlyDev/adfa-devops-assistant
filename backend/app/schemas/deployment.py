@@ -56,6 +56,12 @@ class LogIngestResponse(BaseModel):
     analysis: LogAnalysis
 
 
+class DemoSeedResponse(BaseModel):
+    message: str
+    inserted_logs: int
+    existing_logs: int
+
+
 class DashboardSummaryResponse(BaseModel):
     total_logs: int
     successful_logs: int

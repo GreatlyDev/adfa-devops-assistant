@@ -7,12 +7,14 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.models.deployment import DeploymentLog
 from app.schemas.deployment import (
+    DemoSeedResponse,
     DashboardSummaryResponse,
     DeploymentLogResponse,
     LogIngestResponse,
     LogRequest,
 )
 from app.services.analyzer import analyze_log
+from app.services.demo_data import build_demo_deployments
 
 router = APIRouter(prefix="/api/logs", tags=["logs"])
 
@@ -101,6 +103,60 @@ def ingest_logs(payload: LogRequest, db: Session = Depends(get_db)):
         message="Log received, analyzed, and stored successfully",
         deployment_id=deployment_log.id,
         analysis=analysis_result,
+    )
+
+
+@router.post("/seed-demo", response_model=DemoSeedResponse)
+def seed_demo_logs(force: bool = Query(default=False), db: Session = Depends(get_db)):
+    existing_seed_logs = (
+        db.query(DeploymentLog)
+        .filter(DeploymentLog.source == "demo-seed")
+        .count()
+    )
+
+    if existing_seed_logs and not force:
+        return DemoSeedResponse(
+            message="Demo deployment data already exists. Use force=true to seed a fresh batch.",
+            inserted_logs=0,
+            existing_logs=existing_seed_logs,
+        )
+
+    if existing_seed_logs and force:
+        (
+            db.query(DeploymentLog)
+            .filter(DeploymentLog.source == "demo-seed")
+            .delete()
+        )
+        db.commit()
+
+    demo_deployments = build_demo_deployments()
+
+    for deployment in demo_deployments:
+        analysis = deployment["analysis"]
+        db.add(
+            DeploymentLog(
+                service_name=deployment["service_name"],
+                environment=deployment["environment"],
+                source=deployment["source"],
+                branch=deployment["branch"],
+                commit_sha=deployment["commit_sha"],
+                triggered_by=deployment["triggered_by"],
+                log_text=deployment["log_text"],
+                status=analysis["status"],
+                issues=json.dumps(analysis["issues"]),
+                recommendations=json.dumps(analysis["recommendations"]),
+                issue_categories=json.dumps(analysis["issue_categories"]),
+                matched_signals=json.dumps(analysis["matched_signals"]),
+                confidence_score=analysis["confidence_score"],
+            )
+        )
+
+    db.commit()
+
+    return DemoSeedResponse(
+        message="Demo deployment data loaded successfully.",
+        inserted_logs=len(demo_deployments),
+        existing_logs=existing_seed_logs,
     )
 
 

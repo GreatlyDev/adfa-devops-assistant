@@ -187,3 +187,36 @@ def test_analyzer_returns_permission_category_and_signals():
     assert "permissions" in analysis["issue_categories"]
     assert "permission denied" in analysis["matched_signals"]
     assert analysis["confidence_score"] >= 0.9
+
+
+def test_seed_demo_logs_loads_sample_data():
+    response = client.post("/api/logs/seed-demo")
+
+    assert response.status_code == 200
+
+    response_data = response.json()
+
+    assert response_data["inserted_logs"] == 6
+    assert response_data["existing_logs"] == 0
+
+    summary_response = client.get("/api/logs/summary")
+    summary_data = summary_response.json()
+
+    assert summary_data["total_logs"] == 6
+    assert summary_data["top_issue_categories"]
+
+
+def test_seed_demo_logs_does_not_duplicate_without_force():
+    first_response = client.post("/api/logs/seed-demo")
+    second_response = client.post("/api/logs/seed-demo")
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+
+    second_data = second_response.json()
+
+    assert second_data["inserted_logs"] == 0
+    assert second_data["existing_logs"] == 6
+
+    logs_response = client.get("/api/logs/")
+    assert len(logs_response.json()) == 6

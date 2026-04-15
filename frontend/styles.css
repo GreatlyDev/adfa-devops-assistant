@@ -208,6 +208,10 @@ button {
     border-radius: 18px;
 }
 
+.seed-note {
+    margin-top: 14px;
+}
+
 .hidden {
     display: none;
 }
