@@ -146,6 +146,9 @@ def test_summary_endpoint_returns_log_counts():
         "successful_logs": 1,
         "failed_logs": 1,
     }
+    assert response_data["open_alerts_count"] == 1
+    assert response_data["active_alerts"][0]["severity"] in {"high", "critical"}
+    assert response_data["active_alerts"][0]["service_name"] == "payments-api"
     assert response_data["top_issue_categories"][0]["category"] == "permissions"
     assert response_data["most_impacted_services"][0]["service_name"] == "payments-api"
     assert len(response_data["recent_logs"]) == 2
@@ -267,3 +270,33 @@ def test_export_logs_csv_respects_filters():
     assert "payments-api" in response.text
     assert "frontend-web" not in response.text
     assert "issue_categories" in response.text
+
+
+def test_alerts_endpoint_returns_ranked_alerts():
+    client.post(
+        "/api/logs/",
+        json={
+            "service_name": "auth-gateway",
+            "environment": "prod",
+            "log_text": "Permission denied while accessing secret AUTH_KEY",
+        },
+    )
+    client.post(
+        "/api/logs/",
+        json={
+            "service_name": "billing-sync",
+            "environment": "staging",
+            "log_text": "Deployment failed due to timeout error",
+        },
+    )
+
+    response = client.get("/api/logs/alerts")
+
+    assert response.status_code == 200
+
+    alerts = response.json()
+
+    assert len(alerts) == 2
+    assert alerts[0]["service_name"] == "auth-gateway"
+    assert alerts[0]["severity"] == "critical"
+    assert alerts[1]["service_name"] == "billing-sync"

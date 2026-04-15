@@ -3,214 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADFA Dashboard</title>
+    <title>ADFA - Premium Deployment Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body>
-    <main class="page-shell">
-        <section class="hero">
-            <div>
-                <p class="eyebrow">ADFA Dashboard</p>
-                <h1>Track deployment logs and surface issues fast.</h1>
-                <p class="hero-copy">
-                    A lightweight operations dashboard for viewing recent deployment activity,
-                    spotting failures, and testing the ADFA analyzer from one screen.
-                </p>
+    <header class="app-header">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
             </div>
-            <div class="hero-card">
-                <p class="hero-label">API Status</p>
-                <p id="health-status" class="hero-status">Checking...</p>
-                <p class="hero-note">Connected to your FastAPI backend</p>
-            </div>
-        </section>
+            <span>ADFA Intelligence</span>
+        </div>
+        <div id="health-status" class="health-status offline">
+            <div class="status-pulse"></div>
+            <span id="health-text">Checking system status...</span>
+        </div>
+    </header>
 
-        <section class="stats-grid">
-            <article class="stat-card">
-                <p class="stat-label">Total Logs</p>
-                <p id="total-logs" class="stat-value">0</p>
-            </article>
-            <article class="stat-card">
-                <p class="stat-label">Successful</p>
-                <p id="successful-logs" class="stat-value success">0</p>
-            </article>
-            <article class="stat-card">
-                <p class="stat-label">Failed</p>
-                <p id="failed-logs" class="stat-value failed">0</p>
-            </article>
-            <article class="stat-card">
-                <p class="stat-label">Failure Rate</p>
-                <p id="failure-rate" class="stat-value">0%</p>
-            </article>
-        </section>
-
-        <section class="insight-grid">
-            <article class="panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="panel-kicker">Status Mix</p>
-                        <h2>Deployment outcome chart</h2>
+    <div class="app-body">
+        <aside class="sidebar">
+            <section>
+                <span class="sidebar-label">Analytics Scope</span>
+                <form id="filters-form" class="sidebar-stack">
+                    <div class="form-group">
+                        <label for="filter-environment">Environment</label>
+                        <select id="filter-environment" name="environment" class="form-control">
+                            <option value="">All environments</option>
+                            <option value="dev">Development</option>
+                            <option value="staging">Staging Clusters</option>
+                            <option value="prod">Production Fleet</option>
+                        </select>
                     </div>
-                </div>
-                <div id="status-chart" class="chart-shell"></div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="panel-kicker">Trends</p>
-                        <h2>Top issue categories</h2>
+                    <div class="form-group">
+                        <label for="filter-status">Deployment Status</label>
+                        <select id="filter-status" name="status" class="form-control">
+                            <option value="">All events</option>
+                            <option value="failed">Critical failures</option>
+                            <option value="success">Successful only</option>
+                        </select>
                     </div>
-                </div>
-                <div id="category-chart" class="chart-shell"></div>
-                <div id="top-categories" class="insight-list"></div>
-            </article>
-
-            <article class="panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="panel-kicker">Service Health</p>
-                        <h2>Most impacted services</h2>
+                    <div class="form-group">
+                        <label for="filter-service">Service Name</label>
+                        <input id="filter-service" name="service_name" class="form-control" type="text" placeholder="auth-gateway">
                     </div>
-                </div>
-                <div id="impacted-services" class="insight-list"></div>
-                <p id="average-confidence" class="meta-text"></p>
-            </article>
-        </section>
-
-        <section class="content-grid">
-            <article class="panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="panel-kicker">Analyzer</p>
-                        <h2>Submit a deployment log</h2>
+                    <div class="form-group">
+                        <label for="filter-search">Search Signals</label>
+                        <input id="filter-search" name="search" class="form-control" type="text" placeholder="timeout, memory, secret">
                     </div>
-                    <button id="seed-demo-button" class="secondary-button" type="button">Load Demo Data</button>
-                </div>
-
-                <form id="log-form" class="log-form">
-                    <div class="form-grid">
-                        <div>
-                            <label for="service-name">Service Name</label>
-                            <input id="service-name" name="service_name" type="text" placeholder="payments-api">
-                        </div>
-                        <div>
-                            <label for="environment">Environment</label>
-                            <select id="environment" name="environment">
-                                <option value="">Select environment</option>
-                                <option value="dev">dev</option>
-                                <option value="staging">staging</option>
-                                <option value="prod">prod</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="source">Source</label>
-                            <select id="source" name="source">
-                                <option value="">Select source</option>
-                                <option value="github-actions">GitHub Actions</option>
-                                <option value="jenkins">Jenkins</option>
-                                <option value="gitlab-ci">GitLab CI</option>
-                                <option value="manual">Manual</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="triggered-by">Triggered By</label>
-                            <input id="triggered-by" name="triggered_by" type="text" placeholder="great">
-                        </div>
-                        <div>
-                            <label for="branch">Branch</label>
-                            <input id="branch" name="branch" type="text" placeholder="main">
-                        </div>
-                        <div>
-                            <label for="commit-sha">Commit SHA</label>
-                            <input id="commit-sha" name="commit_sha" type="text" placeholder="f2ba8af">
-                        </div>
+                    <div class="form-group">
+                        <label for="trend-days">Trend Window</label>
+                        <select id="trend-days" name="trend_days" class="form-control">
+                            <option value="7">Last 7 days</option>
+                            <option value="14">Last 14 days</option>
+                            <option value="30">Last 30 days</option>
+                        </select>
                     </div>
-                    <label for="log-text">Deployment log text</label>
-                    <textarea
-                        id="log-text"
-                        name="log_text"
-                        rows="10"
-                        placeholder="Paste a deployment log here..."
-                        required
-                    ></textarea>
-                    <button type="submit">Analyze and Save Log</button>
-                </form>
-
-                <div id="submission-result" class="result-box hidden"></div>
-                <p class="meta-text seed-note">Use demo data to populate the dashboard with realistic deployment failures and successes.</p>
-            </article>
-
-            <article class="panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="panel-kicker">Filters</p>
-                        <h2>Investigate deployment history</h2>
-                    </div>
-                </div>
-
-                <form id="filters-form" class="filter-form">
-                    <div class="form-grid compact-grid">
-                        <div>
-                            <label for="filter-status">Status</label>
-                            <select id="filter-status" name="status">
-                                <option value="">All statuses</option>
-                                <option value="success">success</option>
-                                <option value="failed">failed</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="filter-environment">Environment</label>
-                            <select id="filter-environment" name="environment">
-                                <option value="">All environments</option>
-                                <option value="dev">dev</option>
-                                <option value="staging">staging</option>
-                                <option value="prod">prod</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="filter-service">Service</label>
-                            <input id="filter-service" name="service_name" type="text" placeholder="payments-api">
-                        </div>
-                        <div>
-                            <label for="filter-search">Search</label>
-                            <input id="filter-search" name="search" type="text" placeholder="timeout or commit">
-                        </div>
-                    </div>
-                    <div class="filter-actions">
-                        <button type="submit" class="secondary-button">Apply Filters</button>
-                        <button id="export-button" type="button" class="secondary-button">Export CSV</button>
-                        <button id="clear-filters" type="button" class="ghost-button">Clear</button>
+                    <div class="sidebar-actions">
+                        <button type="submit" class="btn btn-primary full-width">Apply Insights</button>
+                        <button id="clear-filters" type="button" class="btn btn-ghost full-width">Reset Scope</button>
                     </div>
                 </form>
-            </article>
+            </section>
 
-            <article class="panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="panel-kicker">Recent Activity</p>
-                        <h2>Latest deployment logs</h2>
+            <section>
+                <span class="sidebar-label">Operations</span>
+                <div class="sidebar-stack">
+                    <button id="export-button" class="btn btn-ghost" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Export Snapshot
+                    </button>
+                    <button id="seed-demo-button" class="btn btn-ghost btn-accent" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                        </svg>
+                        Live Simulation
+                    </button>
+                    <button id="refresh-button" class="btn btn-ghost" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                            <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+                        </svg>
+                        Refresh Feed
+                    </button>
+                </div>
+            </section>
+
+            <section>
+                <span class="sidebar-label">Alert Queue</span>
+                <div id="alert-inbox" class="sidebar-stack">
+                    <div class="alert-empty">No active alerts in the current scope.</div>
+                </div>
+            </section>
+
+            <section>
+                <span class="sidebar-label">Manual Ingest</span>
+                <form id="log-form" class="sidebar-stack">
+                    <div class="form-group">
+                        <label for="service-name">Service Name</label>
+                        <input id="service-name" name="service_name" class="form-control" type="text" placeholder="auth-gateway-v2">
                     </div>
-                    <button id="refresh-button" class="secondary-button" type="button">Refresh</button>
-                </div>
-
-                <p id="active-filters" class="meta-text active-filters">Showing all deployment logs.</p>
-                <div id="recent-logs" class="log-list"></div>
-            </article>
-
-            <article class="panel details-panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="panel-kicker">Deployment Details</p>
-                        <h2 id="details-title">Select a deployment</h2>
+                    <div class="form-group">
+                        <label for="environment">Environment</label>
+                        <select id="environment" name="environment" class="form-control">
+                            <option value="">Select environment</option>
+                            <option value="dev">dev</option>
+                            <option value="staging">staging</option>
+                            <option value="prod">prod</option>
+                        </select>
                     </div>
-                </div>
+                    <div class="form-group">
+                        <label for="source">Source</label>
+                        <select id="source" name="source" class="form-control">
+                            <option value="">Select source</option>
+                            <option value="github-actions">GitHub Actions</option>
+                            <option value="jenkins">Jenkins</option>
+                            <option value="gitlab-ci">GitLab CI</option>
+                            <option value="manual">Manual</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="branch">Branch</label>
+                        <input id="branch" name="branch" class="form-control" type="text" placeholder="main">
+                    </div>
+                    <div class="form-group">
+                        <label for="commit-sha">Commit SHA</label>
+                        <input id="commit-sha" name="commit_sha" class="form-control" type="text" placeholder="8f2a9c1e">
+                    </div>
+                    <div class="form-group">
+                        <label for="triggered-by">Triggered By</label>
+                        <input id="triggered-by" name="triggered_by" class="form-control" type="text" placeholder="release-bot">
+                    </div>
+                    <div class="form-group">
+                        <label for="log-text">Deployment Trace</label>
+                        <textarea id="log-text" name="log_text" class="form-control form-textarea" rows="7" placeholder="Paste deployment trace logs here..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary full-width">Analyze &amp; Store Event</button>
+                </form>
+                <div id="submission-result" class="result-message hidden"></div>
+            </section>
+        </aside>
 
-                <div id="deployment-details" class="details-empty">
-                    Choose a deployment from recent activity to inspect its metadata, analyzer output, and raw log.
+        <main class="main-content">
+            <section class="grid-kpi">
+                <article class="card">
+                    <div class="kpi-title">TOTAL EVENTS</div>
+                    <div id="total-logs" class="kpi-value">0</div>
+                </article>
+                <article class="card">
+                    <div class="kpi-title">STABILITY SCORE</div>
+                    <div id="stability-score" class="kpi-value kpi-success">0%</div>
+                </article>
+                <article class="card">
+                    <div class="kpi-title">OPEN ALERTS</div>
+                    <div id="open-alerts" class="kpi-value kpi-error">0</div>
+                </article>
+                <article class="card">
+                    <div class="kpi-title">AVG CONFIDENCE</div>
+                    <div id="average-confidence-kpi" class="kpi-value">0%</div>
+                </article>
+                <article class="card">
+                    <div class="kpi-title">TREND WINDOW</div>
+                    <div id="trend-window" class="kpi-value kpi-accent">7d</div>
+                </article>
+            </section>
+
+            <section class="grid-viz">
+                <article class="card">
+                    <h3 class="section-title">Distribution</h3>
+                    <div class="distribution-panel">
+                        <div class="donut-shell">
+                            <div id="status-donut" class="status-donut" aria-hidden="true"></div>
+                            <div class="donut-center">
+                                <div id="success-rate" class="donut-value">0%</div>
+                                <div class="donut-label">Healthy</div>
+                            </div>
+                        </div>
+                        <div class="distribution-legend">
+                            <div class="legend-row">
+                                <span class="legend-tone success"></span>
+                                <span>Successful deployments</span>
+                                <strong id="successful-logs">0</strong>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-tone error"></span>
+                                <span>Failed deployments</span>
+                                <strong id="failed-logs-legend">0</strong>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-tone accent"></span>
+                                <span>Failure rate</span>
+                                <strong id="failure-rate">0%</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <div class="subsection-title">Issue Category Pressure</div>
+                        <div id="category-chart" class="chart-shell"></div>
+                    </div>
+
+                    <div class="subsection">
+                        <div class="subsection-title">Most Impacted Services</div>
+                        <div id="impacted-services" class="impact-list"></div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <h3 class="section-title">Deployment Velocity</h3>
+                    <div class="velocity-meta">
+                        <div>
+                            <div class="meta-label">Trend Horizon</div>
+                            <div id="trend-caption" class="meta-value">Last 7 days</div>
+                        </div>
+                        <div>
+                            <div class="meta-label">Signals Captured</div>
+                            <div id="total-events-caption" class="meta-value">0 events</div>
+                        </div>
+                    </div>
+                    <div class="trend-chart-card">
+                        <svg id="activity-chart" class="activity-chart" viewBox="0 0 760 240" preserveAspectRatio="none" aria-label="Daily deployment activity trend"></svg>
+                    </div>
+                    <div id="activity-legend" class="activity-legend"></div>
+                </article>
+            </section>
+
+            <section class="feed-section">
+                <h3 class="section-title">Deployment Intelligence Feed</h3>
+                <div class="logs-split">
+                    <div class="log-pane">
+                        <div class="log-pane-header">
+                            <div>
+                                <div class="pane-title">Recent deployments</div>
+                                <div id="active-filters" class="pane-subtitle">Showing all deployment logs.</div>
+                            </div>
+                        </div>
+                        <div id="recent-logs" class="log-list"></div>
+                    </div>
+
+                    <article class="card detail-card">
+                        <div class="detail-header">
+                            <div>
+                                <div class="pane-title">Deployment Failure Analysis</div>
+                                <div id="details-subtitle" class="pane-subtitle">Select a deployment to inspect full telemetry.</div>
+                            </div>
+                            <span id="details-status-badge" class="badge badge-neutral">Awaiting selection</span>
+                        </div>
+
+                        <div id="deployment-details" class="detail-content empty-state-panel">
+                            Choose a deployment from the intelligence feed to inspect metadata, root-cause signals, recommendations, and raw trace logs.
+                        </div>
+                    </article>
                 </div>
-            </article>
-        </section>
-    </main>
+            </section>
+        </main>
+    </div>
 
     <script src="/assets/app.js"></script>
 </body>

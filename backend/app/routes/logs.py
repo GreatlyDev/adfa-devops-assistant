@@ -11,12 +11,14 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.models.deployment import DeploymentLog
 from app.schemas.deployment import (
+    AlertResponse,
     DemoSeedResponse,
     DashboardSummaryResponse,
     DeploymentLogResponse,
     LogIngestResponse,
     LogRequest,
 )
+from app.services.alerts import filter_alerts
 from app.services.analyzer import analyze_log
 from app.services.demo_data import build_demo_deployments
 
@@ -93,6 +95,18 @@ def get_filtered_logs(
         service_name=service_name,
         search=search,
     ).all()
+
+
+def sort_alerts(alerts: list[dict]) -> list[dict]:
+    severity_rank = {"critical": 0, "high": 1, "medium": 2}
+    return sorted(
+        alerts,
+        key=lambda alert: (
+            severity_rank.get(alert["severity"], 3),
+            -(alert["confidence_score"] or 0.0),
+            -(alert["created_at"].timestamp() if alert["created_at"] else 0.0),
+        ),
+    )
 
 
 @router.post("/", response_model=LogIngestResponse)
@@ -262,6 +276,27 @@ def export_logs_csv(
     )
 
 
+@router.get("/alerts", response_model=list[AlertResponse])
+def get_alerts(
+    severity: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    environment: str | None = Query(default=None),
+    service_name: str | None = Query(default=None),
+    search: str | None = Query(default=None),
+    limit: int = Query(default=10, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    logs = get_filtered_logs(
+        db=db,
+        status=status,
+        environment=environment,
+        service_name=service_name,
+        search=search,
+    )
+    alerts = sort_alerts(filter_alerts(logs, severity=severity))
+    return alerts[:limit]
+
+
 @router.get("/summary", response_model=DashboardSummaryResponse)
 def get_logs_summary(
     status: str | None = Query(default=None),
@@ -318,6 +353,8 @@ def get_logs_summary(
                 if log.status == "failed":
                     daily_activity_map[log_day]["failed_logs"] += 1
 
+    active_alerts = sort_alerts(filter_alerts(logs))[:5]
+
     return DashboardSummaryResponse(
         total_logs=len(logs),
         successful_logs=successful_logs,
@@ -336,6 +373,8 @@ def get_logs_summary(
             {"label": "failed", "count": failed_logs},
         ],
         daily_activity=list(daily_activity_map.values()),
+        open_alerts_count=len(filter_alerts(logs)),
+        active_alerts=active_alerts,
         top_issue_categories=[
             {"category": category, "count": count}
             for category, count in category_counts.most_common(4)

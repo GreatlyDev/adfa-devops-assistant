@@ -62,6 +62,18 @@ class DailyActivityPoint(BaseModel):
     failed_logs: int
 
 
+class AlertResponse(BaseModel):
+    deployment_id: int
+    service_name: str
+    environment: str
+    severity: str
+    summary: str
+    recommended_action: str
+    confidence_score: float
+    issue_categories: list[str]
+    created_at: datetime
+
+
 class LogIngestResponse(BaseModel):
     message: str
     deployment_id: int
@@ -83,6 +95,8 @@ class DashboardSummaryResponse(BaseModel):
     active_filters: dict[str, str]
     status_breakdown: list[StatusBreakdownStat]
     daily_activity: list[DailyActivityPoint]
+    open_alerts_count: int
+    active_alerts: list[AlertResponse]
     top_issue_categories: list[IssueCategoryStat]
     most_impacted_services: list[ServiceHealthStat]
     recent_logs: list[DeploymentLogResponse]
