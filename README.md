@@ -103,6 +103,7 @@ From the `backend` folder:
 
 ```bash
 cd backend
+py -m alembic -c alembic.ini upgrade head
 py -m uvicorn app.main:app --reload
 ```
 
@@ -116,14 +117,19 @@ Then open:
 From the project root:
 
 ```bash
-docker build -t adfa-backend -f backend/Dockerfile .
-docker run -p 8000:8000 adfa-backend
+docker compose up --build
 ```
 
 Then open:
 
 - [http://localhost:8000/docs](http://localhost:8000/docs)
 - [http://localhost:8000/dashboard](http://localhost:8000/dashboard)
+
+This Compose setup runs:
+
+- the FastAPI app
+- PostgreSQL
+- Alembic migrations automatically before the API starts
 
 ## How to Test the Project
 
@@ -188,6 +194,19 @@ The current test suite covers:
 - single-log retrieval by ID
 - 404 handling for missing deployment logs
 - summary endpoint behavior
+
+## Database Migrations
+
+ADFA now uses Alembic for schema management.
+
+Useful commands from the `backend` folder:
+
+```bash
+py -m alembic -c alembic.ini upgrade head
+py -m alembic -c alembic.ini revision --autogenerate -m "describe change"
+```
+
+For Docker Compose runs, migrations are applied automatically on startup.
 
 ## Example DevOps Use Case
 

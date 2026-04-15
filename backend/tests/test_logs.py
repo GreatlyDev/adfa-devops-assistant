@@ -52,7 +52,15 @@ def test_health_check():
 def test_create_log_and_fetch_by_id():
     create_response = client.post(
         "/api/logs/",
-        json={"log_text": "Deployment failed due to timeout error"},
+        json={
+            "service_name": "payments-api",
+            "environment": "prod",
+            "source": "github-actions",
+            "branch": "main",
+            "commit_sha": "abc1234",
+            "triggered_by": "great",
+            "log_text": "Deployment failed due to timeout error",
+        },
     )
 
     assert create_response.status_code == 200
@@ -66,8 +74,17 @@ def test_create_log_and_fetch_by_id():
     response_data = get_response.json()
 
     assert response_data["id"] == deployment_id
+    assert response_data["service_name"] == "payments-api"
+    assert response_data["environment"] == "prod"
+    assert response_data["source"] == "github-actions"
+    assert response_data["branch"] == "main"
+    assert response_data["commit_sha"] == "abc1234"
+    assert response_data["triggered_by"] == "great"
     assert response_data["status"] == "failed"
-    assert "Deployment log contains an error." in response_data["issues"]
+    assert "timeout" in response_data["issue_categories"]
+    assert "application" in response_data["issue_categories"]
+    assert "timeout" in response_data["matched_signals"]
+    assert response_data["confidence_score"] > 0.7
 
 
 def test_get_log_by_id_returns_404_when_missing():
@@ -78,8 +95,24 @@ def test_get_log_by_id_returns_404_when_missing():
 
 
 def test_summary_endpoint_returns_log_counts():
-    client.post("/api/logs/", json={"log_text": "Deployment completed successfully"})
-    client.post("/api/logs/", json={"log_text": "Permission denied during deploy"})
+    client.post(
+        "/api/logs/",
+        json={
+            "service_name": "frontend",
+            "environment": "dev",
+            "source": "manual",
+            "log_text": "Deployment completed successfully",
+        },
+    )
+    client.post(
+        "/api/logs/",
+        json={
+            "service_name": "payments-api",
+            "environment": "prod",
+            "source": "github-actions",
+            "log_text": "Permission denied during deploy",
+        },
+    )
 
     response = client.get("/api/logs/summary")
 
@@ -90,4 +123,67 @@ def test_summary_endpoint_returns_log_counts():
     assert response_data["total_logs"] == 2
     assert response_data["successful_logs"] == 1
     assert response_data["failed_logs"] == 1
+    assert response_data["failure_rate"] == 50.0
+    assert response_data["average_confidence"] >= 0.5
+    assert response_data["active_filters"] == {
+        "status": "",
+        "environment": "",
+        "service_name": "",
+        "search": "",
+    }
+    assert response_data["top_issue_categories"][0]["category"] == "permissions"
+    assert response_data["most_impacted_services"][0]["service_name"] == "payments-api"
     assert len(response_data["recent_logs"]) == 2
+    assert response_data["recent_logs"][0]["issue_categories"]
+
+
+def test_logs_can_be_filtered_by_environment_and_search():
+    client.post(
+        "/api/logs/",
+        json={
+            "service_name": "frontend",
+            "environment": "staging",
+            "branch": "release/ui-refresh",
+            "log_text": "Deployment completed successfully",
+        },
+    )
+    client.post(
+        "/api/logs/",
+        json={
+            "service_name": "payments-api",
+            "environment": "prod",
+            "branch": "main",
+            "commit_sha": "deadbeef",
+            "log_text": "Deployment failed due to timeout error",
+        },
+    )
+
+    response = client.get("/api/logs/?environment=prod&search=dead")
+
+    assert response.status_code == 200
+
+    response_data = response.json()
+
+    assert len(response_data) == 1
+    assert response_data[0]["service_name"] == "payments-api"
+    assert response_data[0]["environment"] == "prod"
+
+
+def test_analyzer_returns_permission_category_and_signals():
+    response = client.post(
+        "/api/logs/",
+        json={
+            "service_name": "secrets-sync",
+            "environment": "prod",
+            "log_text": "Permission denied while reading deployment secret from vault",
+        },
+    )
+
+    assert response.status_code == 200
+
+    analysis = response.json()["analysis"]
+
+    assert analysis["status"] == "failed"
+    assert "permissions" in analysis["issue_categories"]
+    assert "permission denied" in analysis["matched_signals"]
+    assert analysis["confidence_score"] >= 0.9

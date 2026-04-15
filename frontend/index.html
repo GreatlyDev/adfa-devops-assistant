@@ -37,6 +37,33 @@
                 <p class="stat-label">Failed</p>
                 <p id="failed-logs" class="stat-value failed">0</p>
             </article>
+            <article class="stat-card">
+                <p class="stat-label">Failure Rate</p>
+                <p id="failure-rate" class="stat-value">0%</p>
+            </article>
+        </section>
+
+        <section class="insight-grid">
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Trends</p>
+                        <h2>Top issue categories</h2>
+                    </div>
+                </div>
+                <div id="top-categories" class="insight-list"></div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Service Health</p>
+                        <h2>Most impacted services</h2>
+                    </div>
+                </div>
+                <div id="impacted-services" class="insight-list"></div>
+                <p id="average-confidence" class="meta-text"></p>
+            </article>
         </section>
 
         <section class="content-grid">
@@ -49,6 +76,43 @@
                 </div>
 
                 <form id="log-form" class="log-form">
+                    <div class="form-grid">
+                        <div>
+                            <label for="service-name">Service Name</label>
+                            <input id="service-name" name="service_name" type="text" placeholder="payments-api">
+                        </div>
+                        <div>
+                            <label for="environment">Environment</label>
+                            <select id="environment" name="environment">
+                                <option value="">Select environment</option>
+                                <option value="dev">dev</option>
+                                <option value="staging">staging</option>
+                                <option value="prod">prod</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="source">Source</label>
+                            <select id="source" name="source">
+                                <option value="">Select source</option>
+                                <option value="github-actions">GitHub Actions</option>
+                                <option value="jenkins">Jenkins</option>
+                                <option value="gitlab-ci">GitLab CI</option>
+                                <option value="manual">Manual</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="triggered-by">Triggered By</label>
+                            <input id="triggered-by" name="triggered_by" type="text" placeholder="great">
+                        </div>
+                        <div>
+                            <label for="branch">Branch</label>
+                            <input id="branch" name="branch" type="text" placeholder="main">
+                        </div>
+                        <div>
+                            <label for="commit-sha">Commit SHA</label>
+                            <input id="commit-sha" name="commit_sha" type="text" placeholder="f2ba8af">
+                        </div>
+                    </div>
                     <label for="log-text">Deployment log text</label>
                     <textarea
                         id="log-text"
@@ -66,13 +130,70 @@
             <article class="panel">
                 <div class="panel-header">
                     <div>
+                        <p class="panel-kicker">Filters</p>
+                        <h2>Investigate deployment history</h2>
+                    </div>
+                </div>
+
+                <form id="filters-form" class="filter-form">
+                    <div class="form-grid compact-grid">
+                        <div>
+                            <label for="filter-status">Status</label>
+                            <select id="filter-status" name="status">
+                                <option value="">All statuses</option>
+                                <option value="success">success</option>
+                                <option value="failed">failed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filter-environment">Environment</label>
+                            <select id="filter-environment" name="environment">
+                                <option value="">All environments</option>
+                                <option value="dev">dev</option>
+                                <option value="staging">staging</option>
+                                <option value="prod">prod</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filter-service">Service</label>
+                            <input id="filter-service" name="service_name" type="text" placeholder="payments-api">
+                        </div>
+                        <div>
+                            <label for="filter-search">Search</label>
+                            <input id="filter-search" name="search" type="text" placeholder="timeout or commit">
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button type="submit" class="secondary-button">Apply Filters</button>
+                        <button id="clear-filters" type="button" class="ghost-button">Clear</button>
+                    </div>
+                </form>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
                         <p class="panel-kicker">Recent Activity</p>
                         <h2>Latest deployment logs</h2>
                     </div>
                     <button id="refresh-button" class="secondary-button" type="button">Refresh</button>
                 </div>
 
+                <p id="active-filters" class="meta-text active-filters">Showing all deployment logs.</p>
                 <div id="recent-logs" class="log-list"></div>
+            </article>
+
+            <article class="panel details-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Deployment Details</p>
+                        <h2 id="details-title">Select a deployment</h2>
+                    </div>
+                </div>
+
+                <div id="deployment-details" class="details-empty">
+                    Choose a deployment from recent activity to inspect its metadata, analyzer output, and raw log.
+                </div>
             </article>
         </section>
     </main>
